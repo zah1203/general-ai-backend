@@ -35,19 +35,21 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-resource "aws_default_route_table" "default" {
-  default_route_table_id = data.aws_vpc.default.default_route_table_id
+data "aws_route_table" "default" {
+  vpc_id = data.aws_vpc.default.id
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main.id
+  filter {
+    name   = "association.main"
+    values = ["true"]
   }
+}
 
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-default-rt"
-    Project     = var.project_name
-    Environment = var.environment
-  }
+resource "aws_route" "default_internet_access" {
+  route_table_id         = data.aws_route_table.default.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.main.id
+
+  depends_on = [aws_internet_gateway.main]
 }
 
 data "aws_ami" "amazon_linux_2023" {
@@ -92,6 +94,7 @@ resource "aws_security_group" "backend" {
   }
 
   egress {
+    description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -157,8 +160,8 @@ resource "aws_instance" "backend" {
   })
 
   depends_on = [
-    aws_default_route_table.default,
-    aws_internet_gateway.main
+    aws_route.default_internet_access,
+    aws_iam_instance_profile.ec2_profile
   ]
 
   tags = {
