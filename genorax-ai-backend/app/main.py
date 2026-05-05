@@ -72,7 +72,7 @@ def analyze_gene_list(payload: GeneListRequest) -> GeneAnalysisResponse:
     Returns:
         Mock gene analysis response.
     """
-    results = analyze_genes(payload.genes)
+    results = analyze_genes(payload.genes, payload.disease_context)
     return build_gene_response(payload.disease_context, results)
 
 
@@ -90,5 +90,5 @@ def analyze_mutation_list(payload: MutationListRequest) -> MutationAnalysisRespo
     Returns:
         Mock mutation analysis response.
     """
-    results = analyze_mutations(payload.mutations)
+    results = analyze_mutations(payload.mutations, payload.disease_context)
     return build_mutation_response(payload.disease_context, results)
