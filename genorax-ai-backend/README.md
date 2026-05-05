@@ -1,7 +1,6 @@
 # Genorax AI Backend
 
-Genorax AI Backend is a production-ready FastAPI skeleton for an AI genomics platform.
-It currently uses **mock analysis logic** and a modular architecture so real AI inference can be added later.
+Genorax AI Backend is a FastAPI service for AI-assisted genomics workflows. The backend now includes an OpenAI-powered reasoning layer for structured colorectal cancer interpretation of genes and mutations, with safe mock fallback when LLM access is unavailable.
 
 ## Tech Stack
 
@@ -9,6 +8,7 @@ It currently uses **mock analysis logic** and a modular architecture so real AI 
 - FastAPI
 - Uvicorn
 - Pydantic
+- OpenAI Python SDK
 
 ## Project Structure
 
@@ -21,19 +21,17 @@ genorax-ai-backend/
 │   ├── services/
 │   │   ├── __init__.py
 │   │   ├── gene_service.py
+│   │   ├── llm_service.py
 │   │   └── mutation_service.py
 │   └── utils/
 │       ├── __init__.py
 │       └── response_builder.py
 ├── requirements.txt
 ├── Dockerfile
-├── .gitignore
 └── README.md
 ```
 
-## Local Setup (fixes `ModuleNotFoundError: No module named 'fastapi'`)
-
-Run these commands from the `genorax-ai-backend` directory:
+## Local Setup
 
 ```bash
 cd genorax-ai-backend
@@ -43,26 +41,44 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-If dependency installation succeeds, `fastapi` and `uvicorn` will be available in the virtual environment.
+## Environment Variables
 
-## Run the Server
+- `OPENAI_API_KEY` (required for live LLM responses)
+- `OPENAI_MODEL` (optional, default: `gpt-4o-mini`)
+
+### Windows / Git Bash
+
+```bash
+export OPENAI_API_KEY="your_key_here"
+export OPENAI_MODEL="gpt-4o-mini"
+```
+
+## Run
+
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+
+## Docker
 
 ```bash
 cd genorax-ai-backend
-source .venv/bin/activate
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+docker build -t genorax-ai-backend .
+docker run -d \
+--name genorax-ai-backend \
+-p 8000:8000 \
+-e OPENAI_API_KEY="your_key_here" \
+-e OPENAI_MODEL="gpt-4o-mini" \
+genorax-ai-backend
 ```
-
-- API base URL: `http://127.0.0.1:8000`
-- Swagger docs: `http://127.0.0.1:8000/docs`
 
 ## API Endpoints
 
-### Health Check
+- `GET /health`
+- `POST /analyze-gene-list`
+- `POST /analyze-mutation-list`
 
-```bash
-curl -X GET "http://127.0.0.1:8000/health"
-```
+## Example Requests
 
 ### Analyze Gene List
 
@@ -70,7 +86,7 @@ curl -X GET "http://127.0.0.1:8000/health"
 curl -X POST "http://127.0.0.1:8000/analyze-gene-list" \
   -H "Content-Type: application/json" \
   -d '{
-    "genes": ["KRAS", "TP53"],
+    "genes": ["KRAS", "TP53", "APC"],
     "disease_context": "colorectal cancer"
   }'
 ```
@@ -81,49 +97,9 @@ curl -X POST "http://127.0.0.1:8000/analyze-gene-list" \
 curl -X POST "http://127.0.0.1:8000/analyze-mutation-list" \
   -H "Content-Type: application/json" \
   -d '{
-    "mutations": ["KRAS G12D"],
+    "mutations": ["KRAS G12D", "TP53 R175H", "BRAF V600E"],
     "disease_context": "colorectal cancer"
   }'
 ```
 
-### Validation Error Example (empty list)
-
-```bash
-curl -X POST "http://127.0.0.1:8000/analyze-gene-list" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "genes": [],
-    "disease_context": "colorectal cancer"
-  }'
-```
-
-The API returns HTTP `422` with validation details.
-
-## Docker
-
-```bash
-cd genorax-ai-backend
-docker build -t genorax-ai-backend .
-docker run --rm -p 8000:8000 genorax-ai-backend
-```
-
-## Git Setup & GitHub Push
-
-```bash
-# 1) Initialize git (if needed)
-git init
-
-# 2) Add files
-git add .
-
-# 3) Commit
-git commit -m "Initial commit: Genorax AI Backend FastAPI skeleton"
-
-# 4) Create GitHub repo (requires GitHub CLI auth)
-gh repo create genorax-ai-backend --public --source=. --remote=origin --push
-
-# 5) Push code (if repo already exists)
-git branch -M main
-git remote add origin https://github.com/<your-username>/genorax-ai-backend.git
-git push -u origin main
-```
+If `OPENAI_API_KEY` is missing or the OpenAI call fails, the API returns schema-compatible mock values with an explanation that LLM is unavailable.
