@@ -7,7 +7,3 @@ transformers
 torch
 biopython
 requests
-<<<<<<< HEAD
-=======
-biopython
->>>>>>> e6283b7 (final-mvp)

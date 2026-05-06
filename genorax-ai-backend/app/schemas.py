@@ -1,6 +1,6 @@
 """Pydantic schemas for request and response payloads."""
 
-from typing import List
+from typing import List, Any
 
 from pydantic import BaseModel, Field
 
@@ -8,19 +8,37 @@ from pydantic import BaseModel, Field
 class GeneListRequest(BaseModel):
     """Request body for gene list analysis."""
 
-    genes: List[str] = Field(..., min_items=1, description="List of gene symbols.")
-    disease_context: str = Field(..., min_length=1, description="Disease context for analysis.")
+    genes: List[str] = Field(
+        ...,
+        min_items=1,
+        description="List of gene symbols."
+    )
+
+    disease_context: str = Field(
+        ...,
+        min_length=1,
+        description="Disease context for analysis."
+    )
 
 
 class MutationListRequest(BaseModel):
     """Request body for mutation list analysis."""
 
-    mutations: List[str] = Field(..., min_items=1, description="List of mutation strings.")
-    disease_context: str = Field(..., min_length=1, description="Disease context for analysis.")
+    mutations: List[str] = Field(
+        ...,
+        min_items=1,
+        description="List of mutation strings."
+    )
+
+    disease_context: str = Field(
+        ...,
+        min_length=1,
+        description="Disease context for analysis."
+    )
 
 
 class GeneAnalysisResult(BaseModel):
-    """Mock gene analysis result item."""
+    """Gene analysis result item."""
 
     gene: str
     predicted_role: str
@@ -28,15 +46,31 @@ class GeneAnalysisResult(BaseModel):
     confidence: float
     explanation: str
 
+    evidence_summary: str = ""
+
+    source: str = "openai_llm_plus_pubmed_biobert"
+
+    pubmed_evidence: List[Any] = []
+
+    biobert_entities: List[Any] = []
+
 
 class MutationAnalysisResult(BaseModel):
-    """Mock mutation analysis result item."""
+    """Mutation analysis result item."""
 
     mutation: str
     predicted_impact: str
     pathway: str
     confidence: float
     explanation: str
+
+    evidence_summary: str = ""
+
+    source: str = "openai_llm_plus_pubmed_biobert"
+
+    pubmed_evidence: List[Any] = []
+
+    biobert_entities: List[Any] = []
 
 
 class GeneAnalysisResponse(BaseModel):
