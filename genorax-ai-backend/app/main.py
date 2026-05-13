@@ -26,7 +26,11 @@ logger = logging.getLogger("genorax-api")
 app = FastAPI(
     title="Genorax AI Backend",
     version="0.1.0",
-    description="Backend skeleton for AI genomics workflows using mock analysis logic.",
+    description=(
+    "Genorax AI Backend for biomedical reasoning over genes and mutations. "
+    "The backend uses FastAPI, structured JSON responses, OpenAI reasoning, "
+    "and fallback-safe service logic."
+),
 )
 
 
