@@ -1,14 +1,18 @@
-"""BioBERT / biomedical NER service."""
+"""BioBERT / biomedical NER service with safe optional loading."""
 
 from functools import lru_cache
-from typing import List, Dict, Any
-
-from transformers import pipeline
+from typing import Any, Dict, List
 
 
 @lru_cache(maxsize=1)
 def _get_ner_pipeline():
-    """Load biomedical NER model once and reuse it."""
+    """Load biomedical NER model once and reuse it.
+
+    The transformers import is inside this function so FastAPI can still start
+    even if the instance is too small or the model cannot load.
+    """
+    from transformers import pipeline
+
     return pipeline(
         "ner",
         model="d4data/biomedical-ner-all",
@@ -18,7 +22,10 @@ def _get_ner_pipeline():
 
 
 def extract_biomedical_entities(text: str) -> List[Dict[str, Any]]:
-    """Extract biomedical entities from input text."""
+    """Extract biomedical entities from input text.
+
+    If BioBERT cannot run, return a safe response instead of crashing the API.
+    """
     if not text:
         return []
 
@@ -39,4 +46,11 @@ def extract_biomedical_entities(text: str) -> List[Dict[str, Any]]:
         return entities
 
     except Exception as exc:
-        return [{"error": str(exc)}]
+        return [
+            {
+                "text": text,
+                "label": "biobert_unavailable",
+                "score": 0.0,
+                "note": str(exc),
+            }
+        ]
