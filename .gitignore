@@ -1,0 +1,17 @@
+# Terraform local/runtime files
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.*
+**/terraform.tfvars
+**/backend.hcl
+
+# Logs
+crash.log
+crash.*.log
+
+# Python
+__pycache__/
+*.pyc
+.env
+.venv/
