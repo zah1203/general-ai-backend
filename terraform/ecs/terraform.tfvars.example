@@ -1,0 +1,12 @@
+aws_region                   = "us-east-1"
+project_name                 = "genorax-ai-backend"
+environment                  = "dev"
+allowed_http_cidr            = "0.0.0.0/0"
+openai_model                 = "gpt-4o-mini"
+openai_api_key_secret_arn    = ""
+image_tag                    = "latest"
+desired_count                = 1
+task_cpu                     = "2048"
+task_memory                  = "4096"
+task_ephemeral_storage_gib   = 50
+log_retention_days           = 14
