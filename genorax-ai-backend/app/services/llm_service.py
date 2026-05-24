@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -52,7 +52,7 @@ def _safe_json_parse(content: str, expected_type: str) -> Dict[str, Any]:
     }
 
 
-def _format_pubmed_evidence(pubmed_evidence: list | None) -> str:
+def _format_pubmed_evidence(pubmed_evidence: Optional[List[Any]]) -> str:
     """Format PubMed evidence for inclusion in the LLM prompt."""
     if not pubmed_evidence:
         return "No PubMed evidence was retrieved."
@@ -107,7 +107,7 @@ def _run_completion(
 def analyze_gene_with_llm(
     gene: str,
     disease_context: str,
-    pubmed_evidence: list | None = None,
+    pubmed_evidence: Optional[List[Any]] = None,
 ) -> Dict[str, Any]:
     """Analyze a gene using LLM biological reasoning with optional PubMed evidence."""
     evidence_text = _format_pubmed_evidence(pubmed_evidence)
@@ -150,7 +150,7 @@ Important:
 def analyze_mutation_with_llm(
     mutation: str,
     disease_context: str,
-    pubmed_evidence: list | None = None,
+    pubmed_evidence: Optional[List[Any]] = None,
 ) -> Dict[str, Any]:
     """Analyze a mutation using LLM biological reasoning with optional PubMed evidence."""
     evidence_text = _format_pubmed_evidence(pubmed_evidence)

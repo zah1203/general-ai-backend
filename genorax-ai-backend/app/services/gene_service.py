@@ -1,6 +1,6 @@
 """Service functions for gene analysis with LLM + PubMed + BioBERT + fallback."""
 
-from typing import List
+from typing import Any, List, Optional
 
 from app.schemas import GeneAnalysisResult
 from app.services.llm_service import analyze_gene_with_llm
@@ -11,8 +11,8 @@ from app.services.bio_ner_service import extract_biomedical_entities
 def _mock_gene_result(
     gene: str,
     reason: str,
-    pubmed_evidence: list | None = None,
-    biobert_entities: list | None = None,
+    pubmed_evidence: Optional[List[Any]] = None,
+    biobert_entities: Optional[List[Any]] = None,
 ) -> GeneAnalysisResult:
     """Return safe fallback result if LLM fails."""
     return GeneAnalysisResult(
