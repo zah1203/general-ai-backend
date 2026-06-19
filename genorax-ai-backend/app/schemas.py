@@ -39,6 +39,38 @@ class MutationListRequest(BaseModel):
     )
 
 
+class SampleInterpretationRequest(BaseModel):
+    """Request body for sample-level biological interpretation."""
+
+    sample_id: str = Field(
+        ...,
+        min_length=1,
+        description="Research sample identifier.",
+        examples=["CRC_001"],
+    )
+    disease_context: str = Field(
+        ...,
+        min_length=1,
+        description="Disease or biological context for interpretation.",
+        examples=["colorectal cancer"],
+    )
+    genes: List[str] = Field(
+        default_factory=list,
+        description="Gene symbols detected or prioritized in the sample.",
+        examples=[["APC", "KRAS", "TP53"]],
+    )
+    mutations: List[str] = Field(
+        default_factory=list,
+        description="Mutation strings detected or prioritized in the sample.",
+        examples=[["KRAS G12D", "TP53 R175H"]],
+    )
+    notes: Optional[str] = Field(
+        None,
+        description="Optional clinical, experimental, or cohort notes for research context.",
+        examples=["Left-sided colorectal tumor with suspected adenoma-carcinoma pathway."],
+    )
+
+
 class ResponseMetadata(BaseModel):
     """Metadata returned with each analysis response."""
 
@@ -94,6 +126,30 @@ class MutationAnalysisResult(BaseModel):
     )
 
 
+class PathwaySummary(BaseModel):
+    """Pathway-level summary for sample interpretation."""
+
+    pathway: str = Field(..., description="Pathway or biological process name.")
+    related_genes: List[str] = Field(
+        default_factory=list,
+        description="Genes or mutations related to this pathway.",
+    )
+    interpretation: str = Field(..., description="Pathway-level interpretation.")
+
+
+class SampleInterpretationResult(BaseModel):
+    """Sample-level interpretation result."""
+
+    sample_id: str
+    overall_interpretation: str
+    key_driver_events: List[str] = Field(default_factory=list)
+    pathway_summaries: List[PathwaySummary] = Field(default_factory=list)
+    clinical_research_relevance: str
+    limitations: str
+    confidence: float = Field(..., ge=0.0, le=1.0)
+    evidence_summary: Optional[str] = None
+
+
 class GeneAnalysisResponse(BaseModel):
     """Response body for gene list analysis."""
 
@@ -113,4 +169,14 @@ class MutationAnalysisResponse(BaseModel):
     disease_context: str
     summary: str
     results: List[MutationAnalysisResult]
+    metadata: ResponseMetadata
+
+
+class SampleInterpretationResponse(BaseModel):
+    """Response body for sample-level interpretation."""
+
+    status: str = Field("success", description="Request status.")
+    analysis_type: str = Field("sample_interpretation", description="Type of analysis performed.")
+    disease_context: str
+    result: SampleInterpretationResult
     metadata: ResponseMetadata
