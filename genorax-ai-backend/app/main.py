@@ -12,9 +12,13 @@ from app.schemas import (
     GeneListRequest,
     MutationAnalysisResponse,
     MutationListRequest,
+    SampleInterpretationRequest,
+    SampleInterpretationResponse,
+    ResponseMetadata,
 )
 from app.services.gene_service import analyze_genes
 from app.services.mutation_service import analyze_mutations
+from app.services.sample_service import analyze_sample
 from app.utils.response_builder import build_gene_response, build_mutation_response
 
 logging.basicConfig(
@@ -25,12 +29,12 @@ logger = logging.getLogger("genorax-api")
 
 app = FastAPI(
     title="Genorax AI Backend",
-    version="0.1.0",
+    version="0.2.0",
     description=(
-    "Genorax AI Backend for biomedical reasoning over genes and mutations. "
-    "The backend uses FastAPI, structured JSON responses, OpenAI reasoning, "
-    "and fallback-safe service logic."
-),
+        "Genorax AI Backend for biomedical reasoning over genes, mutations, "
+        "and sample-level sequencing findings. The backend uses FastAPI, "
+        "structured JSON responses, OpenAI reasoning, and fallback-safe service logic."
+    ),
 )
 
 
@@ -62,20 +66,13 @@ def health_check() -> Dict[str, str]:
     return {
         "status": "healthy",
         "service": "genorax-ai-backend",
-        "version": "0.1.0",
+        "version": "0.2.0",
     }
 
 
 @app.post("/analyze-gene-list", response_model=GeneAnalysisResponse, tags=["Analysis"])
 def analyze_gene_list(payload: GeneListRequest) -> GeneAnalysisResponse:
-    """Analyze a list of genes with mock output.
-
-    Args:
-        payload: Gene list request payload.
-
-    Returns:
-        Mock gene analysis response.
-    """
+    """Analyze a list of genes with LLM reasoning and fallback output."""
     results = analyze_genes(payload.genes, payload.disease_context)
     return build_gene_response(payload.disease_context, results)
 
@@ -86,13 +83,32 @@ def analyze_gene_list(payload: GeneListRequest) -> GeneAnalysisResponse:
     tags=["Analysis"],
 )
 def analyze_mutation_list(payload: MutationListRequest) -> MutationAnalysisResponse:
-    """Analyze a list of mutations with mock output.
-
-    Args:
-        payload: Mutation list request payload.
-
-    Returns:
-        Mock mutation analysis response.
-    """
+    """Analyze a list of mutations with LLM reasoning and fallback output."""
     results = analyze_mutations(payload.mutations, payload.disease_context)
     return build_mutation_response(payload.disease_context, results)
+
+
+@app.post(
+    "/analyze-sample-summary",
+    response_model=SampleInterpretationResponse,
+    tags=["Analysis"],
+)
+def analyze_sample_summary(payload: SampleInterpretationRequest) -> SampleInterpretationResponse:
+    """Analyze an entire sample by integrating genes, mutations, and notes."""
+    result = analyze_sample(
+        sample_id=payload.sample_id,
+        disease_context=payload.disease_context,
+        genes=payload.genes,
+        mutations=payload.mutations,
+        notes=payload.notes,
+    )
+    fallback_used = "fallback" in result.limitations.lower()
+    return SampleInterpretationResponse(
+        disease_context=payload.disease_context,
+        result=result,
+        metadata=ResponseMetadata(
+            model="openai_or_fallback",
+            result_count=1,
+            fallback_used=fallback_used,
+        ),
+    )
