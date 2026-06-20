@@ -4,18 +4,18 @@ output "ecr_repository_url" {
 }
 
 output "alb_dns_name" {
-  description = "Public DNS name for the application load balancer"
-  value       = aws_lb.this.dns_name
+  description = "Public DNS name for the application load balancer. Null when enable_backend is false."
+  value       = var.enable_backend ? aws_lb.this[0].dns_name : null
 }
 
 output "health_url" {
-  description = "Health endpoint URL"
-  value       = "http://${aws_lb.this.dns_name}/health"
+  description = "Health endpoint URL. Null when enable_backend is false."
+  value       = var.enable_backend ? "http://${aws_lb.this[0].dns_name}/health" : null
 }
 
 output "docs_url" {
-  description = "Swagger docs endpoint URL"
-  value       = "http://${aws_lb.this.dns_name}/docs"
+  description = "Swagger docs endpoint URL. Null when enable_backend is false."
+  value       = var.enable_backend ? "http://${aws_lb.this[0].dns_name}/docs" : null
 }
 
 output "ecs_cluster_name" {
@@ -24,8 +24,8 @@ output "ecs_cluster_name" {
 }
 
 output "ecs_service_name" {
-  description = "ECS service name"
-  value       = aws_ecs_service.backend.name
+  description = "ECS service name. Null when enable_backend is false."
+  value       = var.enable_backend ? aws_ecs_service.backend[0].name : null
 }
 
 output "ecr_login_command" {
@@ -49,6 +49,6 @@ output "docker_push_command" {
 }
 
 output "force_new_deployment_command" {
-  description = "Command to force a new ECS deployment"
-  value       = "aws ecs update-service --cluster ${aws_ecs_cluster.this.name} --service ${aws_ecs_service.backend.name} --force-new-deployment --region ${var.aws_region}"
+  description = "Command to force a new ECS deployment. Null when enable_backend is false."
+  value       = var.enable_backend ? "aws ecs update-service --cluster ${aws_ecs_cluster.this.name} --service ${aws_ecs_service.backend[0].name} --force-new-deployment --region ${var.aws_region}" : null
 }
