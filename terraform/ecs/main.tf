@@ -69,6 +69,8 @@ locals {
 }
 
 resource "aws_security_group" "alb" {
+  count = var.enable_backend ? 1 : 0
+
   name        = "${local.name_prefix}-alb-sg"
   description = "Allow HTTP access to ALB"
   vpc_id      = data.aws_vpc.default.id
@@ -91,6 +93,8 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_security_group" "ecs_task" {
+  count = var.enable_backend ? 1 : 0
+
   name        = "${local.name_prefix}-ecs-task-sg"
   description = "Allow traffic from ALB to ECS tasks"
   vpc_id      = data.aws_vpc.default.id
@@ -99,7 +103,7 @@ resource "aws_security_group" "ecs_task" {
     from_port       = 8000
     to_port         = 8000
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
+    security_groups = [aws_security_group.alb[0].id]
   }
 
   egress {
@@ -218,16 +222,20 @@ resource "aws_ecs_task_definition" "backend" {
 }
 
 resource "aws_lb" "this" {
+  count = var.enable_backend ? 1 : 0
+
   name               = substr(replace("${local.name_prefix}-alb", "_", "-"), 0, 32)
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
+  security_groups    = [aws_security_group.alb[0].id]
   subnets            = local.selected_subnet_ids
 
   tags = local.common_tags
 }
 
 resource "aws_lb_target_group" "backend" {
+  count = var.enable_backend ? 1 : 0
+
   name        = substr(replace("${local.name_prefix}-tg", "_", "-"), 0, 32)
   port        = 8000
   protocol    = "HTTP"
@@ -249,17 +257,21 @@ resource "aws_lb_target_group" "backend" {
 }
 
 resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.this.arn
+  count = var.enable_backend ? 1 : 0
+
+  load_balancer_arn = aws_lb.this[0].arn
   port              = 80
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.backend.arn
+    target_group_arn = aws_lb_target_group.backend[0].arn
   }
 }
 
 resource "aws_ecs_service" "backend" {
+  count = var.enable_backend ? 1 : 0
+
   name            = "${local.name_prefix}-service"
   cluster         = aws_ecs_cluster.this.id
   task_definition = aws_ecs_task_definition.backend.arn
@@ -268,12 +280,12 @@ resource "aws_ecs_service" "backend" {
 
   network_configuration {
     subnets          = local.selected_subnet_ids
-    security_groups  = [aws_security_group.ecs_task.id]
+    security_groups  = [aws_security_group.ecs_task[0].id]
     assign_public_ip = true
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.backend.arn
+    target_group_arn = aws_lb_target_group.backend[0].arn
     container_name   = local.container_name
     container_port   = 8000
   }
